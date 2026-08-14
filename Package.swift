@@ -6,11 +6,17 @@ let package = Package(
     name: "TransmissionShell",
     platforms: [.macOS(.v26)],
     products: [
-        .library(name: "TransmissionKit", targets: ["TransmissionKit"])
+        .library(name: "TransmissionKit", targets: ["TransmissionKit"]),
+        .executable(name: "TransmissionShell", targets: ["TransmissionShell"])
     ],
     targets: [
         .target(
             name: "TransmissionKit",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
+        .executableTarget(
+            name: "TransmissionShell",
+            dependencies: ["TransmissionKit"],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
