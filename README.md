@@ -112,3 +112,10 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
 5. **First add prompts.** macOS asks for notification and local-network permission the
    first time a torrent is added, which may be a magnet click with no window open.
    Both are one-time.
+
+## Disclaimer
+
+This is an unofficial, independent project. It is not affiliated with, endorsed by, or
+supported by the Transmission project or its maintainers. "Transmission" and the
+Transmission logo belong to their respective owners; the name is used here only to
+describe what this client connects to. Please report issues here, not to Transmission.
