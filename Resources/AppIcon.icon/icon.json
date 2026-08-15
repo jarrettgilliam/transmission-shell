@@ -1,0 +1,34 @@
+{
+  "fill" : {
+    "linear-gradient" : [ "extended-srgb:0.988,0.988,0.996,1.000", "extended-srgb:0.898,0.898,0.918,1.000" ]
+  },
+  "groups" : [
+    {
+      "hidden-specializations" : [
+        { "appearance" : "light", "value" : true },
+        { "appearance" : "tinted", "value" : true }
+      ],
+      "layers" : [
+        { "glass" : false, "image-name" : "Shifter-Dark.svg", "name" : "Shifter Dark" }
+      ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0 },
+      "specular" : false,
+      "translucency" : { "enabled" : false, "value" : 0 }
+    },
+    {
+      "hidden-specializations" : [
+        { "appearance" : "dark", "value" : true }
+      ],
+      "layers" : [
+        { "glass" : false, "image-name" : "Shifter.svg", "name" : "Shifter" }
+      ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0 },
+      "specular" : false,
+      "translucency" : { "enabled" : false, "value" : 0 }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [ "watchOS" ],
+    "squares" : [ "iOS", "macOS" ]
+  }
+}

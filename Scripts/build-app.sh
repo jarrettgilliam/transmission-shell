@@ -47,10 +47,15 @@ cp "$ROOT/.build/arm64-apple-macosx/release/$EXECUTABLE_NAME" "$APP/Contents/Mac
 sed "s/__VERSION__/$VERSION/g" "$ROOT/Resources/Info.plist" > "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-ICONSET="$(mktemp -d)/AppIcon.iconset"
-swift "$ROOT/Scripts/make-icon.swift" "$ICONSET" >/dev/null
-iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
-rm -rf "$(dirname "$ICONSET")"
+ICON_PLIST="$(mktemp)"
+xcrun actool "$ROOT/Resources/AppIcon.icon" \
+    --compile "$APP/Contents/Resources" \
+    --app-icon AppIcon \
+    --platform macosx \
+    --minimum-deployment-target 26.0 \
+    --output-partial-info-plist "$ICON_PLIST" \
+    --output-format human-readable-text >/dev/null
+rm -f "$ICON_PLIST"
 
 # Ad-hoc signature: enough for the app to run locally and for Gatekeeper to offer the
 # right-click bypass. It is not notarized and cannot be.

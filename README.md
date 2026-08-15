@@ -56,8 +56,7 @@ swift test
 
 Without `--version` the version comes from `git describe --tags --always --dirty`,
 falling back to `0.0.0` outside a repository. The script builds release, assembles the
-bundle, generates the icon (`Scripts/make-icon.swift`, no committed artwork), and
-ad-hoc signs.
+bundle, compiles the icon, and ad-hoc signs.
 
 `--install` is the quickest way to make magnet links actually route here: it copies to
 `/Applications` and runs `lsregister`, which is what registers the associations.
