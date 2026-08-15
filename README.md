@@ -24,7 +24,9 @@ swift run TransmissionShell
 
 `swift run` produces a bare executable rather than an app bundle, which means no
 magnet or `.torrent` associations and no notifications — the results of adds go to
-the unified log instead. Use the bundle for anything beyond UI work.
+the unified log instead. Use the bundle for anything beyond UI work. Its configuration is
+completely independent of the other: pointing one at a test daemon leaves the
+other alone.
 
 ## Test
 
@@ -111,6 +113,15 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
 5. **First add prompts.** macOS asks for notification and local-network permission the
    first time a torrent is added, which may be a magnet click with no window open.
    Both are one-time.
+6. **Keychain access prompt.** Expect one "wants to use your confidential information"
+   dialog per installed build. The keychain gates the stored password on a *partition
+   list*, which macOS pins to `teamid:` only when the signature carries a team
+   identifier and otherwise pins to the build's `cdhash:`. Without a paid Apple
+   Developer ID there is no team identifier, so each build is pinned to its own hash,
+   and "Always Allow" does not help: that answer reaches only the trusted-application
+   list, which is a separate gate. Code signing with a self-signed certificate does not
+   change this, nor does writing the item with an explicit `SecAccess`. It is once per
+   *build*, though, not once per launch.
 
 ## Disclaimer
 

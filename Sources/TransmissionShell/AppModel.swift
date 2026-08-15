@@ -23,13 +23,13 @@ final class AppModel {
     @ObservationIgnored private let configStore: any ServerConfigStore
     @ObservationIgnored private let credentials: any CredentialStore
     @ObservationIgnored private let logger = Logger(
-        subsystem: Bundle.transmissionShellIdentifier,
+        subsystem: InstallationIdentity.current,
         category: "AppModel"
     )
 
     init(
-        configStore: any ServerConfigStore = UserDefaultsServerConfigStore(),
-        credentials: any CredentialStore = KeychainCredentialStore()
+        configStore: any ServerConfigStore = UserDefaultsServerConfigStore.transmissionShell,
+        credentials: any CredentialStore = CachingCredentialStore(KeychainCredentialStore())
     ) {
         self.configStore = configStore
         self.credentials = credentials
@@ -38,7 +38,7 @@ final class AppModel {
     var isConfigured: Bool { config != nil }
 
     var hasStoredPassword: Bool {
-        ((try? credentials.password()) ?? nil) != nil
+        (try? credentials.hasPassword()) ?? false
     }
 
     func load() {
@@ -128,10 +128,6 @@ final class AppModel {
 }
 
 extension Bundle {
-    /// Falls back to the bundle id the app ships with, since `swift run` has no bundle.
-    static let transmissionShellIdentifier =
-        Bundle.main.bundleIdentifier ?? "com.jarrettgilliam.transmission-shell"
-
     /// Falls back to the name the app ships with, since `swift run` has no bundle.
     static let transmissionShellName =
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Transmission Shell"

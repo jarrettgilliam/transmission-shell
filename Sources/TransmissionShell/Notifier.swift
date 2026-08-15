@@ -11,7 +11,7 @@ import os
 final class Notifier {
     private static let threadIdentifier = "torrent-adds"
 
-    private let logger = Logger(subsystem: Bundle.transmissionShellIdentifier, category: "Notifier")
+    private let logger = Logger(subsystem: InstallationIdentity.current, category: "Notifier")
 
     /// `UNUserNotificationCenter.current()` traps outright when the executable isn't in a
     /// bundle, which is exactly what `swift run TransmissionShell` gives you.

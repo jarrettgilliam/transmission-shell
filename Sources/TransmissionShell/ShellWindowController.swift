@@ -16,7 +16,7 @@ final class ShellWindowController: NSWindowController {
     private let container = NSView()
     private var placeholder: PlaceholderView?
     private var offeredCredentialForNavigation = false
-    private let logger = Logger(subsystem: Bundle.transmissionShellIdentifier, category: "ShellWindow")
+    private let logger = Logger(subsystem: InstallationIdentity.current, category: "ShellWindow")
 
     init(model: AppModel) {
         self.model = model

@@ -14,7 +14,7 @@ public actor RPCClient {
     private let config: ServerConfig
     private let credentials: any CredentialStore
     private let transport: any HTTPTransport
-    private let logger = Logger(subsystem: "com.jarrettgilliam.transmission-shell", category: "RPCClient")
+    private let logger = Logger(subsystem: InstallationIdentity.current, category: "RPCClient")
 
     /// Empty means the daemon answered without ever asking for a session ID; `nil` means
     /// we haven't looked yet.
@@ -24,7 +24,7 @@ public actor RPCClient {
 
     public init(
         config: ServerConfig,
-        credentials: any CredentialStore = KeychainCredentialStore(),
+        credentials: any CredentialStore,
         transport: (any HTTPTransport)? = nil
     ) {
         self.config = config

@@ -48,5 +48,9 @@ final class SettingsWindowController: NSWindowController {
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate()
+
+        // AppKit puts the shell window back on top one runloop turn from now, so ordering
+        // front only sticks if it is also done after that.
+        DispatchQueue.main.async { [weak self] in self?.window?.makeKeyAndOrderFront(nil) }
     }
 }

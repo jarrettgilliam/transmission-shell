@@ -8,8 +8,21 @@ public protocol CredentialStore: Sendable {
     /// `nil` when no password has been stored.
     func password() throws -> String?
 
-    /// Passing `nil` removes the stored password.
+    /// Passing `nil` or an empty string removes the stored password.
     func setPassword(_ password: String?) throws
+
+    /// Whether a password is stored, without reading it.
+    func hasPassword() throws -> Bool
+}
+
+extension CredentialStore {
+    public func hasPassword() throws -> Bool {
+        try password() != nil
+    }
+
+    func normalized(_ password: String?) -> String? {
+        (password?.isEmpty ?? true) ? nil : password
+    }
 }
 
 /// Keeps the password in the login keychain as one generic-password item whose identity
@@ -19,7 +32,7 @@ public struct KeychainCredentialStore: CredentialStore {
     private let service: String
     private let account: String
 
-    public init(service: String = "com.jarrettgilliam.transmission-shell", account: String = "daemon-password") {
+    public init(service: String = InstallationIdentity.current, account: String = "daemon-password") {
         self.service = service
         self.account = account
     }
@@ -39,6 +52,25 @@ public struct KeychainCredentialStore: CredentialStore {
             return value
         case errSecItemNotFound:
             return nil
+        default:
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
+
+    /// Asking for attributes rather than `kSecReturnData` skips the item's ACL check, so
+    /// this never raises the "wants to use your confidential information" prompt. Adding
+    /// `kSecReturnData` here would.
+    public func hasPassword() throws -> Bool {
+        var query = baseQuery
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        let status = SecItemCopyMatching(query as CFDictionary, nil)
+        switch status {
+        case errSecSuccess:
+            return true
+        case errSecItemNotFound:
+            return false
         default:
             throw KeychainError.unexpectedStatus(status)
         }
@@ -96,6 +128,36 @@ public enum KeychainError: Error, LocalizedError {
     }
 }
 
+/// Reads the wrapped store at most once per process.
+///
+/// Every keychain read is a separate ACL check, and an app the keychain doesn't recognise
+/// gets one password prompt per check. One read means at most one prompt.
+public final class CachingCredentialStore: CredentialStore {
+    private let wrapped: any CredentialStore
+    private let cached = Mutex<String??>(nil)
+
+    public init(_ wrapped: any CredentialStore) {
+        self.wrapped = wrapped
+    }
+
+    public func password() throws -> String? {
+        if let cached = cached.withLock({ $0 }) { return cached }
+        let value = try wrapped.password()
+        cached.withLock { $0 = value }
+        return value
+    }
+
+    public func setPassword(_ password: String?) throws {
+        try wrapped.setPassword(password)
+        cached.withLock { $0 = normalized(password) }
+    }
+
+    public func hasPassword() throws -> Bool {
+        if let cached = cached.withLock({ $0 }) { return cached != nil }
+        return try wrapped.hasPassword()
+    }
+}
+
 /// Keeps the password in memory only. For tests and SwiftUI previews, which must not
 /// touch the real keychain.
 public final class InMemoryCredentialStore: CredentialStore {
@@ -110,6 +172,7 @@ public final class InMemoryCredentialStore: CredentialStore {
     }
 
     public func setPassword(_ password: String?) throws {
-        storage.withLock { $0 = password }
+        let value = normalized(password)
+        storage.withLock { $0 = value }
     }
 }

@@ -6,7 +6,7 @@ import os
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = AppModel()
     private let notifier = Notifier()
-    private let logger = Logger(subsystem: Bundle.transmissionShellIdentifier, category: "AppDelegate")
+    private let logger = Logger(subsystem: InstallationIdentity.current, category: "AppDelegate")
 
     private lazy var shellWindow: ShellWindowController = {
         let controller = ShellWindowController(model: model)

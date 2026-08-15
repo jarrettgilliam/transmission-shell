@@ -27,6 +27,12 @@ public struct UserDefaultsServerConfigStore: ServerConfigStore, @unchecked Senda
     public func save(_ config: ServerConfig) throws {
         defaults.set(try JSONEncoder().encode(config), forKey: key)
     }
+
+    /// The app's own settings domain. Keeps `swift run` out of the installed app's
+    /// settings, and vice versa.
+    public static let transmissionShell = UserDefaultsServerConfigStore(
+        defaults: UserDefaults(suiteName: InstallationIdentity.settingsSuite) ?? .standard
+    )
 }
 
 /// For tests and SwiftUI previews, which must not touch the real defaults domain.
