@@ -131,4 +131,8 @@ extension Bundle {
     /// Falls back to the bundle id the app ships with, since `swift run` has no bundle.
     static let transmissionShellIdentifier =
         Bundle.main.bundleIdentifier ?? "com.jarrettgilliam.transmission-shell"
+
+    /// Falls back to the name the app ships with, since `swift run` has no bundle.
+    static let transmissionShellName =
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Transmission Shell"
 }

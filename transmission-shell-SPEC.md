@@ -1,4 +1,4 @@
-# TransmissionShell — Project Spec
+# Transmission Shell — Project Spec
 
 Native macOS wrapper around the Transmission daemon's built-in web UI, adding
 system-level magnet link and `.torrent` file handling via direct RPC calls.
@@ -62,7 +62,7 @@ Sources/
     ShellWindow.swift       # WKWebView host
     SettingsView.swift      # server config UI
 Scripts/
-  build-app.sh              # → dist/TransmissionShell.app  [--dmg]
+  build-app.sh              # → "dist/Transmission Shell.app"  [--dmg]
 Package.swift
 ```
 
@@ -213,14 +213,14 @@ fronted by a reverse proxy with an internal CA.
 ```sh
 swift build                          # compile
 swift run TransmissionShell          # dev run
-./Scripts/build-app.sh               # → dist/TransmissionShell.app
+./Scripts/build-app.sh               # → "dist/Transmission Shell.app"
 ./Scripts/build-app.sh --dmg         # + portable .dmg
 ```
 
 Ad-hoc codesign in the build script. Without an Apple Developer ID:
 
 - First launch requires right-click → Open
-- Run `lsregister -f -R /Applications/TransmissionShell.app` if LaunchServices
+- Run `lsregister -f -R "/Applications/Transmission Shell.app"` if LaunchServices
   doesn't pick up the associations
   (`/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister`)
 

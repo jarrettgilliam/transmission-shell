@@ -54,7 +54,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag { shellWindow.present() }
+        // Ignores `flag`: it is true when only the Settings window is up, which is exactly a
+        // case that should bring the shell window back.
+        shellWindow.present()
         return true
     }
 
@@ -109,9 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Never forces the window forward — a queue of magnets from a browser shouldn't
-        // yank focus away from it.
-        shellWindow.reloadIfVisible()
+        shellWindow.presentAfterAdd()
     }
 
     private func description(of url: URL) -> String {

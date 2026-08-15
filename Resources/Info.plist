@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>TransmissionShell</string>
+	<string>Transmission Shell</string>
 	<key>CFBundleDisplayName</key>
-	<string>TransmissionShell</string>
+	<string>Transmission Shell</string>
 	<key>CFBundleExecutable</key>
 	<string>TransmissionShell</string>
 	<key>CFBundleIdentifier</key>
@@ -30,7 +30,7 @@
 	<string>MIT licensed</string>
 
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>TransmissionShell connects to your Transmission daemon, which is usually on your local network.</string>
+	<string>Transmission Shell connects to your Transmission daemon, which is usually on your local network.</string>
 
 	<!-- The user supplies the server address, including bare private IPs over plain HTTP,
 	     which no narrower ATS exception covers. -->

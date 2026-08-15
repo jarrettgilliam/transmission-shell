@@ -9,6 +9,8 @@ import os
 final class ShellWindowController: NSWindowController {
     var onOpenSettings: (() -> Void)?
 
+    private static let blankPage = URL(string: "about:blank")!
+
     private let model: AppModel
     private let webView: WKWebView
     private let container = NSView()
@@ -29,13 +31,16 @@ final class ShellWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "TransmissionShell"
+        window.title = Bundle.transmissionShellName
         window.setFrameAutosaveName("ShellWindow")
         window.contentMinSize = NSSize(width: 640, height: 400)
+        window.isReleasedWhenClosed = false
 
         super.init(window: window)
 
+        window.delegate = self
         webView.navigationDelegate = self
+        webView.isHidden = true
         webView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(webView)
         NSLayoutConstraint.activate([
@@ -56,16 +61,30 @@ final class ShellWindowController: NSWindowController {
         window?.isVisible == true && window?.isMiniaturized == false
     }
 
-    /// Brings the window up. Only ever called for launches — a magnet arriving while the
-    /// app is already running must not steal focus.
     func present() {
-        showWindow(nil)
-        window?.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        let wasOnScreen = isVisible
+        bringForward()
+        // Skipped when it was already up: a Dock click on a window you're looking at
+        // shouldn't throw away your place in the page.
+        if !wasOnScreen { reload() }
+    }
+
+    func presentAfterAdd() {
+        bringForward()
         reload()
     }
 
+    private func bringForward() {
+        if NSApp.isHidden { NSApp.unhide(nil) }
+        window?.deminiaturize(nil)
+        showWindow(nil)
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate()
+    }
+
     func reload() {
+        updateTitle()
+
         guard let config = model.config else {
             showUnconfigured()
             return
@@ -75,16 +94,15 @@ final class ShellWindowController: NSWindowController {
         webView.load(URLRequest(url: config.webURL))
     }
 
-    /// Reloads only when the user is actually looking at the window.
-    func reloadIfVisible() {
-        guard isVisible else { return }
-        reload()
+    private func updateTitle() {
+        let name = Bundle.transmissionShellName
+        window?.title = model.config.map { "\(name) — \($0.baseURL.absoluteString)" } ?? name
     }
 
     private func showUnconfigured() {
         showPlaceholder(
             title: "No server configured",
-            message: "Point TransmissionShell at your Transmission daemon to see its web interface here.",
+            message: "Point \(Bundle.transmissionShellName) at your Transmission daemon to see its web interface here.",
             actions: [PlaceholderView.Action(title: "Open Settings…") { [weak self] in self?.onOpenSettings?() }]
         )
     }
@@ -108,7 +126,6 @@ final class ShellWindowController: NSWindowController {
     private func clearPlaceholder() {
         placeholder?.removeFromSuperview()
         placeholder = nil
-        webView.isHidden = false
     }
 
     private func showFailure(_ message: String) {
@@ -120,6 +137,14 @@ final class ShellWindowController: NSWindowController {
                 PlaceholderView.Action(title: "Settings…") { [weak self] in self?.onOpenSettings?() }
             ]
         )
+    }
+}
+
+extension ShellWindowController: NSWindowDelegate {
+    /// Closing has to stop the page, not just hide it: the web UI polls the daemon on its own
+    /// timers, and the window outlives its own close.
+    func windowWillClose(_ notification: Notification) {
+        webView.load(URLRequest(url: Self.blankPage))
     }
 }
 
@@ -154,6 +179,9 @@ extension ShellWindowController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         clearPlaceholder()
+        // Revealing the web view only once real content has painted keeps the blank page —
+        // which WebKit draws white — from flashing before a load lands.
+        webView.isHidden = webView.url == Self.blankPage
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Assembles dist/TransmissionShell.app. See README.md for the workflow.
+# Assembles "dist/Transmission Shell.app". See README.md for the workflow.
 
-APP_NAME="TransmissionShell"
+APP_NAME="Transmission Shell"
+# Must stay in step with CFBundleExecutable and the SPM product name.
+EXECUTABLE_NAME="TransmissionShell"
 BUNDLE_ID="com.jarrettgilliam.transmission-shell"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
@@ -40,7 +42,7 @@ swift build --package-path "$ROOT" -c release --arch arm64
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-cp "$ROOT/.build/arm64-apple-macosx/release/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+cp "$ROOT/.build/arm64-apple-macosx/release/$EXECUTABLE_NAME" "$APP/Contents/MacOS/$EXECUTABLE_NAME"
 
 sed "s/__VERSION__/$VERSION/g" "$ROOT/Resources/Info.plist" > "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
@@ -58,7 +60,7 @@ codesign --verify --strict "$APP"
 echo "Built $APP"
 
 if [ "$MAKE_DMG" = true ]; then
-    DMG="$DIST/$APP_NAME-$VERSION.dmg"
+    DMG="$DIST/Transmission-Shell-$VERSION.dmg"
     STAGING="$(mktemp -d)"
     cp -R "$APP" "$STAGING/"
     ln -s /Applications "$STAGING/Applications"

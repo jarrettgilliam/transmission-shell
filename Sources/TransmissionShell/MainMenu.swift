@@ -13,6 +13,11 @@ enum MainMenu {
         menu.addItem(applicationMenu(appName: appName))
         menu.addItem(editMenu())
         menu.addItem(viewMenu())
+
+        let window = windowMenu()
+        menu.addItem(window)
+        NSApplication.shared.windowsMenu = window.submenu
+
         return menu
     }
 
@@ -97,6 +102,32 @@ enum MainMenu {
             keyEquivalent: "f"
         )
         fullScreen.keyEquivalentModifierMask = [.command, .control]
+
+        item.submenu = submenu
+        return item
+    }
+
+    private static func windowMenu() -> NSMenuItem {
+        let item = NSMenuItem()
+        let submenu = NSMenu(title: "Window")
+
+        submenu.addItem(
+            withTitle: "Close",
+            action: #selector(NSWindow.performClose(_:)),
+            keyEquivalent: "w"
+        )
+        submenu.addItem(
+            withTitle: "Minimize",
+            action: #selector(NSWindow.performMiniaturize(_:)),
+            keyEquivalent: "m"
+        )
+        submenu.addItem(
+            withTitle: "Zoom",
+            action: #selector(NSWindow.performZoom(_:)),
+            keyEquivalent: ""
+        )
+        // AppKit appends "Bring All to Front" and the open windows below this.
+        submenu.addItem(.separator())
 
         item.submenu = submenu
         return item

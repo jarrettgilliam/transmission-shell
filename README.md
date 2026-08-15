@@ -1,4 +1,4 @@
-# TransmissionShell
+# Transmission Shell
 
 A remote-only Transmission client for macOS: the daemon's own web UI in a native
 window, plus system handling of `magnet:` links and `.torrent` files via direct RPC.
@@ -48,8 +48,8 @@ swift test
 ## Bundle
 
 ```sh
-./Scripts/build-app.sh                    # → dist/TransmissionShell.app
-./Scripts/build-app.sh --dmg              # + dist/TransmissionShell-<version>.dmg
+./Scripts/build-app.sh                    # → "dist/Transmission Shell.app"
+./Scripts/build-app.sh --dmg              # + dist/Transmission-Shell-<version>.dmg
 ./Scripts/build-app.sh --install          # + copy to /Applications, refresh LaunchServices
 ./Scripts/build-app.sh --version 1.2.3    # override the version
 ```
@@ -99,7 +99,7 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
 2. **LaunchServices caching.** Magnet and `.torrent` associations may not take effect
    until the app has been launched once from `/Applications`, or until you run:
    ```sh
-   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f -R /Applications/TransmissionShell.app
+   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f -R "/Applications/Transmission Shell.app"
    ```
    `Scripts/build-app.sh --install` does this for you.
 3. **Browser handler preferences.** Chrome and Firefox cache protocol-handler choices
