@@ -8,11 +8,20 @@ talks to a `transmission-daemon` you already have.
 
 ## Install
 
-Download the `.dmg` from [Releases](../../releases), open it, and drag the app to
-Applications. Builds are ad-hoc signed, so **the first launch needs right-click →
-Open** (see [Known friction](#known-friction)).
+```sh
+curl -fsSL https://github.com/jarrettgilliam/transmission-shell/releases/latest/download/install.sh | zsh
+```
 
-Then open Settings (⌘,) and enter your server's address.
+Installs to `/Applications`, falling back to `~/Applications`, and registers the
+`magnet:` and `.torrent` associations. The script is attached to every release if you
+want to read it first.
+
+The `.dmg` on [Releases](../../releases) is the alternative if you'd rather not pipe a
+script to a shell — drag the app to Applications, then see
+[Known friction](#known-friction), because a downloaded build needs a detour past
+Gatekeeper that the install script avoids.
+
+Either way, open Settings (⌘,) and enter your server's address.
 
 ## Run from source
 
@@ -51,6 +60,7 @@ swift test
 ```sh
 ./Scripts/build-app.sh                    # → "dist/Transmission Shell.app"
 ./Scripts/build-app.sh --dmg              # + dist/Transmission-Shell-<version>.dmg
+./Scripts/build-app.sh --zip              # + that .zip and a version-stamped install.sh
 ./Scripts/build-app.sh --install          # + copy to /Applications, refresh LaunchServices
 ./Scripts/build-app.sh --version 1.2.3    # override the version
 ```
@@ -66,7 +76,8 @@ bundle, compiles the icon, and ad-hoc signs.
 
 Releases are cut from tags. Pushing a `v*` tag runs
 [`.github/workflows/release.yml`](.github/workflows/release.yml), which re-runs the
-full test suite, builds the `.dmg`, and creates the GitHub release with it attached.
+full test suite, builds the `.dmg`, `.zip`, and installer, and creates the GitHub
+release with all three attached.
 
 ```sh
 git tag -a v1.2.3 -m "v1.2.3"
@@ -102,7 +113,8 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
    ```sh
    xattr -d com.apple.quarantine "/Applications/Transmission Shell.app"
    ```
-   Quarantine comes from the download, so a locally built copy never has it.
+   Quarantine comes from the download, so neither the install script nor a locally built
+   copy is ever affected.
 2. **LaunchServices caching.** Magnet and `.torrent` associations may not take effect
    until the app has been launched once from `/Applications`, or until you run:
    ```sh

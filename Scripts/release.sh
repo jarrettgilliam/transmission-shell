@@ -32,10 +32,10 @@ swift test --package-path "$ROOT"
 "$ROOT/Scripts/integration-test.sh"
 
 echo "==> Build"
-"$ROOT/Scripts/build-app.sh" --dmg --version "$TAG"
+"$ROOT/Scripts/build-app.sh" --dmg --zip --version "$TAG"
 
 echo "==> Publish"
 gh release create "$TAG" \
     --title "$TAG" \
     --generate-notes \
-    "$ROOT"/dist/*.dmg
+    "$ROOT"/dist/*.dmg "$ROOT"/dist/*.zip "$ROOT"/dist/install.sh

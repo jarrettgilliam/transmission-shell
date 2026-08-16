@@ -13,16 +13,18 @@ APP="$DIST/$APP_NAME.app"
 
 VERSION=""
 MAKE_DMG=false
+MAKE_ZIP=false
 INSTALL=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --dmg) MAKE_DMG=true ;;
+        --zip) MAKE_ZIP=true ;;
         --install) INSTALL=true ;;
         --version) VERSION="${2:-}"; shift ;;
         --version=*) VERSION="${1#*=}" ;;
         -h|--help)
-            echo "usage: build-app.sh [--version X.Y.Z] [--dmg] [--install]"
+            echo "usage: build-app.sh [--version X.Y.Z] [--dmg] [--zip] [--install]"
             exit 0
             ;;
         *) echo "unknown option: $1" >&2; exit 1 ;;
@@ -77,6 +79,20 @@ if [ "$MAKE_DMG" = true ]; then
     rm -rf "$STAGING"
 
     echo "Built $DMG"
+fi
+
+if [ "$MAKE_ZIP" = true ]; then
+    ZIP="$DIST/Transmission-Shell-$VERSION.zip"
+    rm -f "$ZIP"
+    # ditto rather than zip: it preserves the bundle's code signature.
+    ditto -c -k --keepParent "$APP" "$ZIP"
+
+    INSTALLER="$DIST/install.sh"
+    sed "s/^VERSION=\"latest\"/VERSION=\"$VERSION\"/" "$ROOT/Scripts/install.sh" > "$INSTALLER"
+    chmod +x "$INSTALLER"
+
+    echo "Built $ZIP"
+    echo "Built $INSTALLER"
 fi
 
 if [ "$INSTALL" = true ]; then

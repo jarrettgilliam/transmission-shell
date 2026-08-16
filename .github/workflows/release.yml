@@ -34,8 +34,8 @@ jobs:
       - name: Integration tests
         run: ./Scripts/integration-test.sh
 
-      - name: Build app and disk image
-        run: ./Scripts/build-app.sh --dmg --version "${TAG}"
+      - name: Build app, disk image, and archive
+        run: ./Scripts/build-app.sh --dmg --zip --version "${TAG}"
 
       - name: Create release
         env:
@@ -44,4 +44,4 @@ jobs:
           gh release create "${TAG}" \
             --title "${TAG}" \
             --generate-notes \
-            dist/*.dmg
+            dist/*.dmg dist/*.zip dist/install.sh
