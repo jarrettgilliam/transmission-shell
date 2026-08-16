@@ -1,6 +1,7 @@
 import AppKit
 import WebKit
 import TransmissionKit
+import UniformTypeIdentifiers
 import os
 
 /// Hosts the daemon's own web UI. Nothing is injected into the page — the window is a
@@ -40,6 +41,7 @@ final class ShellWindowController: NSWindowController {
 
         window.delegate = self
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.isHidden = true
         webView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(webView)
@@ -206,5 +208,29 @@ extension ShellWindowController: WKNavigationDelegate {
             ? "The server rejected the username or password. Check them in Settings."
             : nsError.localizedDescription
         showFailure(message)
+    }
+}
+
+extension ShellWindowController: WKUIDelegate {
+    /// Without this the web UI's "Open Torrent" button does nothing: WebKit routes every
+    /// file input through here and drops the click when no `uiDelegate` is set.
+    func webView(
+        _ webView: WKWebView,
+        runOpenPanelWith parameters: WKOpenPanelParameters,
+        initiatedByFrame frame: WKFrameInfo
+    ) async -> [URL]? {
+        guard let window else { return nil }
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = parameters.allowsDirectories
+        panel.allowsMultipleSelection = parameters.allowsMultipleSelection
+        if let torrent = UTType("org.bittorrent.torrent") ?? UTType(filenameExtension: "torrent") {
+            panel.allowedContentTypes = [torrent]
+        }
+        panel.allowsOtherFileTypes = true
+
+        guard await panel.beginSheetModal(for: window) == .OK else { return nil }
+        return panel.urls
     }
 }
