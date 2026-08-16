@@ -5,6 +5,15 @@
 
 <h1 align="center">Transmission Shell</h1>
 
+<p align="center">
+  <a href="../../actions/workflows/ci.yml"><img
+     src="https://github.com/jarrettgilliam/transmission-shell/actions/workflows/ci.yml/badge.svg?branch=main"
+     alt="CI"></a>
+  <a href="../../actions/workflows/release.yml"><img
+     src="https://github.com/jarrettgilliam/transmission-shell/actions/workflows/release.yml/badge.svg"
+     alt="Release"></a>
+</p>
+
 A remote-only Transmission client for macOS: the daemon's own web UI in a native
 window, plus system handling of `magnet:` links and `.torrent` files via direct RPC.
 
