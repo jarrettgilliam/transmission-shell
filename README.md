@@ -1,10 +1,30 @@
-# Transmission Shell
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2611ae5b-4cef-40ff-a1e9-b9252389b69a"
+       alt="Transmission Shell icon" width="128">
+</p>
+
+<h1 align="center">Transmission Shell</h1>
 
 A remote-only Transmission client for macOS: the daemon's own web UI in a native
 window, plus system handling of `magnet:` links and `.torrent` files via direct RPC.
 
 Requires macOS 26 or later, Apple Silicon. It never runs a BitTorrent engine — it
 talks to a `transmission-daemon` you already have.
+
+## Screenshots
+
+The daemon's web UI in a native window:
+
+<img src="https://github.com/user-attachments/assets/01a2059b-e214-454e-a83e-42a82b03af71"
+     alt="The main window, showing a torrent downloading in the Transmission web UI"
+     width="788" height="544">
+
+Settings (⌘,) — one address field, plus optional credentials. See
+[Server address](#server-address):
+
+<img src="https://github.com/user-attachments/assets/86fa5c96-3ef7-426f-a9fc-429371f3ede9"
+     alt="The Server Connection settings sheet, with fields for server URL, username, and password"
+     width="592" height="558">
 
 ## Install
 
