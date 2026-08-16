@@ -94,8 +94,15 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
 
 ## Known friction
 
-1. **Gatekeeper.** Ad-hoc signed builds are not notarized, so the first launch needs
-   right-click → Open and then "Open" in the dialog. Double-clicking will refuse.
+1. **Gatekeeper.** Ad-hoc signed builds are not notarized, so a `.dmg` downloaded from
+   Releases is quarantined and refuses to launch: "Apple could not verify ... is free of
+   malware". Open it once to get the refusal, then go to System Settings → Privacy &
+   Security and click "Open Anyway", which appears there for a short while afterward.
+   Or drop the flag directly:
+   ```sh
+   xattr -d com.apple.quarantine "/Applications/Transmission Shell.app"
+   ```
+   Quarantine comes from the download, so a locally built copy never has it.
 2. **LaunchServices caching.** Magnet and `.torrent` associations may not take effect
    until the app has been launched once from `/Applications`, or until you run:
    ```sh

@@ -57,8 +57,6 @@ xcrun actool "$ROOT/Resources/AppIcon.icon" \
     --output-format human-readable-text >/dev/null
 rm -f "$ICON_PLIST"
 
-# Ad-hoc signature: enough for the app to run locally and for Gatekeeper to offer the
-# right-click bypass. It is not notarized and cannot be.
 codesign --force --sign - --timestamp=none "$APP"
 codesign --verify --strict "$APP"
 
