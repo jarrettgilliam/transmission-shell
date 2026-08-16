@@ -110,4 +110,3 @@ fi
 "$LSREGISTER" -f -R "$DEST"
 
 print -r -- "Installed $DEST"
-print -r -- "Open Settings (⌘,) and enter your server's address."

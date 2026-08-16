@@ -50,8 +50,6 @@ script to a shell — drag the app to Applications, then see
 [Known friction](#known-friction), because a downloaded build needs a detour past
 Gatekeeper that the install script avoids.
 
-Either way, open Settings (⌘,) and enter your server's address.
-
 ## Run from source
 
 ```sh
