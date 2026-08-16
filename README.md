@@ -2,7 +2,6 @@
 
 A remote-only Transmission client for macOS: the daemon's own web UI in a native
 window, plus system handling of `magnet:` links and `.torrent` files via direct RPC.
-See [transmission-shell-SPEC.md](transmission-shell-SPEC.md) for the design.
 
 Requires macOS 26 or later, Apple Silicon. It never runs a BitTorrent engine — it
 talks to a `transmission-daemon` you already have.
