@@ -16,7 +16,6 @@ final class ShellWindowController: NSWindowController {
     private let webView: WKWebView
     private let container = NSView()
     private var placeholder: PlaceholderView?
-    private var offeredCredentialForNavigation = false
     private let logger = Logger(subsystem: InstallationIdentity.current, category: "ShellWindow")
 
     init(model: AppModel) {
@@ -92,7 +91,6 @@ final class ShellWindowController: NSWindowController {
             return
         }
         clearPlaceholder()
-        offeredCredentialForNavigation = false
         webView.load(URLRequest(url: config.webURL))
     }
 
@@ -151,18 +149,29 @@ extension ShellWindowController: NSWindowDelegate {
 }
 
 extension ShellWindowController: WKNavigationDelegate {
+    /// The `async` spelling of this delegate method does not register with WebKit: it
+    /// treats the challenge as unhandled, performs default handling, and renders the
+    /// server's 401 body. Keep the completion-handler form.
     func webView(
         _ webView: WKWebView,
-        didReceive challenge: URLAuthenticationChallenge
-    ) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping @MainActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = respond(to: challenge)
+        completionHandler(disposition, credential)
+    }
+
+    private func respond(
+        to challenge: URLAuthenticationChallenge
+    ) -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         switch challenge.protectionSpace.authenticationMethod {
         case NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest:
-            // A second challenge in the same navigation means the credential was
-            // rejected; offering it again just loops.
-            guard !offeredCredentialForNavigation, let credential = model.webCredential() else {
+            // A nonzero failure count means this credential was already rejected for this
+            // protection space; offering it again just loops. Counting challenges instead
+            // would starve the page, which authenticates each subresource and RPC poll.
+            guard challenge.previousFailureCount == 0, let credential = model.webCredential() else {
                 return (.cancelAuthenticationChallenge, nil)
             }
-            offeredCredentialForNavigation = true
             return (.useCredential, credential)
 
         case NSURLAuthenticationMethodServerTrust:

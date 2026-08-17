@@ -141,10 +141,12 @@ public final class CachingCredentialStore: CredentialStore {
     }
 
     public func password() throws -> String? {
-        if let cached = cached.withLock({ $0 }) { return cached }
-        let value = try wrapped.password()
-        cached.withLock { $0 = value }
-        return value
+        try cached.withLock { slot in
+            if let slot { return slot }
+            let value = try wrapped.password()
+            slot = value
+            return value
+        }
     }
 
     public func setPassword(_ password: String?) throws {
@@ -153,8 +155,10 @@ public final class CachingCredentialStore: CredentialStore {
     }
 
     public func hasPassword() throws -> Bool {
-        if let cached = cached.withLock({ $0 }) { return cached != nil }
-        return try wrapped.hasPassword()
+        try cached.withLock { slot in
+            if let slot { return slot != nil }
+            return try wrapped.hasPassword()
+        }
     }
 }
 
