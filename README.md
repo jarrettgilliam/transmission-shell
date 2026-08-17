@@ -127,8 +127,14 @@ dropped, a missing scheme becomes `http`, and a missing path becomes `/transmiss
 A missing port stays missing and means the scheme's default, so reverse-proxied setups
 on 80/443 work without inventing 9091.
 
-The password lives in the keychain. The settings form never reads it back — leave the
-field blank to keep what's stored, or use "Remove stored password" to clear it.
+The login lives in the login keychain as a website credential for the daemon's address —
+the same item a browser saves, so signing in here and signing in in Safari are one login.
+The username box is prefilled from it and follows the address you type. The password box
+is write-only: blank keeps what's stored, and blank with nothing stored means an empty
+password.
+
+Nothing is ever deleted from the keychain by the app. Removing a login, or replacing a
+stored password with an empty one, is done in Keychain Access.
 
 ## Known friction
 
@@ -154,19 +160,29 @@ field blank to keep what's stored, or use "Remove stored password" to clear it.
 4. **Web UI behind an auth proxy.** The window feeds your stored credentials to the
    web UI when challenged, using the same username and password as the RPC client. If
    the proxy wants different credentials, the page will show a rejection notice rather
-   than looping on the prompt.
+   than looping on the prompt. A proxy that presents its own realm instead of the daemon's
+   `Transmission` also breaks the sharing in 6: the app's item and the browser's then sit
+   in different protection spaces, which costs a second keychain prompt. Authentication
+   itself still works.
 5. **First add prompts.** macOS asks for notification and local-network permission the
    first time a torrent is added, which may be a magnet click with no window open.
    Both are one-time.
 6. **Keychain access prompt.** Expect one "wants to use your confidential information"
-   dialog per installed build. The keychain gates the stored password on a *partition
+   dialog per installed build. The keychain gates a stored password on a *partition
    list*, which macOS pins to `teamid:` only when the signature carries a team
    identifier and otherwise pins to the build's `cdhash:`. Without a paid Apple
    Developer ID there is no team identifier, so each build is pinned to its own hash,
    and "Always Allow" does not help: that answer reaches only the trusted-application
    list, which is a separate gate. Code signing with a self-signed certificate does not
    change this, nor does writing the item with an explicit `SecAccess`. It is once per
-   *build*, though, not once per launch.
+   *build*, though, not once per launch. It is also once per *item*, which is why the app
+   shares one website credential with the browser rather than keeping a login of its own:
+   the web view resolves your saved website credential whether the app wants it to or not,
+   so a separate item would be a second prompt for nothing.
+
+   Where the keychain holds more than one login for the same server, the app uses the most
+   recently modified, and the same one it would write to. If that turns out to be the wrong
+   one, the page reports a rejected password rather than quietly signing in as someone else.
 
 ## Disclaimer
 

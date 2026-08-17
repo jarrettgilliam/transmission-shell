@@ -12,24 +12,24 @@ final class SettingsFormState {
     }
 
     var urlString: String
-    var username: String
-    var password: String
-    var removePassword = false
+    var username = ""
+    var password = ""
     var allowsInvalidCertificates: Bool
     var testStatus: TestStatus = .idle
     var saveError: String?
 
+    /// Whether a login is stored for the URL currently typed, which is what the password
+    /// placeholder reports.
+    var hasStoredCredential = false
+
     init(config: ServerConfig?) {
         urlString = config?.baseURL.absoluteString ?? ServerConfig.defaultURLString
-        username = config?.username ?? ""
-        password = ""
         allowsInvalidCertificates = config?.allowsInvalidCertificates ?? false
     }
 
     /// The field is write-only: empty means "leave whatever is in the keychain alone".
     var passwordChange: PasswordChange {
-        if removePassword { return .remove }
-        return password.isEmpty ? .unchanged : .set(password)
+        password.isEmpty ? .unchanged : .set(password)
     }
 }
 
@@ -38,6 +38,8 @@ struct SettingsView: View {
     @Bindable var form: SettingsFormState
     let onSave: () -> Void
     let onCancel: () -> Void
+
+    @State private var hasPrefilled = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -53,10 +55,6 @@ struct SettingsView: View {
                 Section {
                     TextField("Username", text: $form.username, prompt: Text("Optional"))
                     SecureField("Password", text: $form.password, prompt: Text(passwordPrompt))
-                        .disabled(form.removePassword)
-                    if model.hasStoredPassword {
-                        Toggle("Remove stored password", isOn: $form.removePassword)
-                    }
                 }
 
                 Section {
@@ -91,11 +89,25 @@ struct SettingsView: View {
         }
         .padding(20)
         .frame(width: 480)
+        .task(id: form.urlString) { await refreshStoredLogin() }
     }
 
     private var passwordPrompt: String {
-        if form.removePassword { return "Will be removed" }
-        return model.hasStoredPassword ? "Unchanged" : "Optional"
+        form.hasStoredCredential ? "Unchanged" : "Optional"
+    }
+
+    /// Both lookups are prompt-free, but they are synchronous Security calls, so they wait
+    /// for typing to stop. The first pass runs immediately, since it is the prefill.
+    private func refreshStoredLogin() async {
+        if hasPrefilled {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+        }
+        hasPrefilled = true
+
+        guard let login = model.storedLogin(forURLString: form.urlString) else { return }
+        form.username = login.username ?? ""
+        form.hasStoredCredential = login.exists
     }
 
     @ViewBuilder

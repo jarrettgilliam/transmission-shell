@@ -99,6 +99,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Adds sequentially so notifications land in the order the files were handed over.
     private func add(_ urls: [URL]) async {
         guard let client = model.client else { return }
+        // Ahead of the add rather than only in the window's reload: a stale login fails the
+        // add outright, and the page load that follows would repair it too late to matter.
+        model.invalidateCredentialCache()
 
         for url in urls {
             do {

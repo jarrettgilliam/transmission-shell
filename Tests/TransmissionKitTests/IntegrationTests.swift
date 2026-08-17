@@ -86,10 +86,13 @@ enum Daemon {
         password overridePassword: String? = nil,
         transport: any HTTPTransport = URLSessionTransport()
     ) throws -> RPCClient {
-        let config = try ServerConfig(urlString: #require(baseURL), username: username)
+        let config = try ServerConfig(urlString: #require(baseURL))
         return RPCClient(
             config: config,
-            credentials: InMemoryCredentialStore(password: overridePassword ?? password),
+            credentials: InMemoryCredentialStore(
+                username: username,
+                password: overridePassword ?? password ?? ""
+            ),
             transport: transport
         )
     }

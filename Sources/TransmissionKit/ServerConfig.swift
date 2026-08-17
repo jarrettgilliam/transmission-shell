@@ -3,16 +3,12 @@ import Foundation
 /// Connection settings for a single Transmission daemon.
 ///
 /// `baseURL` mirrors the daemon's own `rpc-url` setting: the directory beneath which
-/// `rpc` and `web/` are served. It is always normalized (see ``init(urlString:username:allowsInvalidCertificates:)``),
+/// `rpc` and `web/` are served. It is always normalized (see ``init(urlString:allowsInvalidCertificates:)``),
 /// including when decoded, so a value of this type is always usable as-is.
 ///
-/// The password is never held here; see ``CredentialStore``.
+/// The login is never held here; see ``CredentialStore``.
 public struct ServerConfig: Codable, Sendable, Equatable {
     public let baseURL: URL
-
-    /// `nil` or empty means the daemon has authentication disabled and no
-    /// `Authorization` header should be sent.
-    public var username: String?
 
     public var allowsInvalidCertificates: Bool
 
@@ -27,9 +23,8 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     /// userinfo are discarded.
     ///
     /// Throws ``ConfigError``.
-    public init(urlString: String, username: String? = nil, allowsInvalidCertificates: Bool = false) throws {
+    public init(urlString: String, allowsInvalidCertificates: Bool = false) throws {
         self.baseURL = try Self.normalize(urlString)
-        self.username = username
         self.allowsInvalidCertificates = allowsInvalidCertificates
     }
 
@@ -37,7 +32,6 @@ public struct ServerConfig: Codable, Sendable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
             urlString: container.decode(String.self, forKey: .baseURL),
-            username: container.decodeIfPresent(String.self, forKey: .username),
             allowsInvalidCertificates: container.decodeIfPresent(Bool.self, forKey: .allowsInvalidCertificates) ?? false
         )
     }
@@ -45,7 +39,6 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(baseURL.absoluteString, forKey: .baseURL)
-        try container.encodeIfPresent(username, forKey: .username)
         try container.encode(allowsInvalidCertificates, forKey: .allowsInvalidCertificates)
     }
 
@@ -57,8 +50,8 @@ public struct ServerConfig: Codable, Sendable, Equatable {
         baseURL.appending(path: "web", directoryHint: .isDirectory)
     }
 
-    /// `nil` when no username is set, i.e. when the daemon has auth disabled.
-    public func authorizationHeader(password: String?) -> String? {
+    /// `nil` when no username is stored, i.e. when the daemon has auth disabled.
+    public func authorizationHeader(username: String?, password: String?) -> String? {
         guard let username, !username.isEmpty else { return nil }
         let credentials = "\(username):\(password ?? "")"
         return "Basic \(Data(credentials.utf8).base64EncodedString())"
@@ -93,7 +86,7 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case baseURL, username, allowsInvalidCertificates
+        case baseURL, allowsInvalidCertificates
     }
 }
 

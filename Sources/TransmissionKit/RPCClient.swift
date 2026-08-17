@@ -142,7 +142,8 @@ public actor RPCClient {
 
     private func authorizationHeader() throws -> String? {
         if let cachedAuthorization { return cachedAuthorization }
-        let header = config.authorizationHeader(password: try credentials.password())
+        let credential = try credentials.credential()
+        let header = config.authorizationHeader(username: credential?.username, password: credential?.password)
         cachedAuthorization = header
         return header
     }

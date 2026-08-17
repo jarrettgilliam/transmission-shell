@@ -30,6 +30,8 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func present() {
+        model.invalidateCredentialCache()
+
         let form = SettingsFormState(config: model.config)
         let view = SettingsView(
             model: model,

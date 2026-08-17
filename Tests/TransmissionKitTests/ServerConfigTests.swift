@@ -85,7 +85,6 @@ struct ConfigPersistenceTests {
     func roundTrip() throws {
         let config = try ServerConfig(
             urlString: "https://example.com/tr/",
-            username: "jarrett",
             allowsInvalidCertificates: true
         )
         let store = InMemoryServerConfigStore()
@@ -105,47 +104,44 @@ struct ConfigPersistenceTests {
         let config = try JSONDecoder().decode(ServerConfig.self, from: Data(stored.utf8))
 
         #expect(config.baseURL.absoluteString == "http://nas.local:9091/transmission/")
-        #expect(config.username == nil)
     }
 
-    @Test("The password never rides along with the config")
-    func passwordIsNotEncoded() throws {
-        let config = try ServerConfig(urlString: "http://nas.local:9091/", username: "jarrett")
+    @Test("The login never rides along with the config")
+    func loginIsNotEncoded() throws {
+        let config = try ServerConfig(urlString: "http://jarrett:hunter2@nas.local:9091/")
         let encoded = String(decoding: try JSONEncoder().encode(config), as: UTF8.self)
 
-        #expect(!encoded.lowercased().contains("password"))
+        #expect(!encoded.lowercased().contains("hunter2"))
+        #expect(!encoded.lowercased().contains("jarrett"))
     }
 }
 
 @Suite("Credential storage")
 struct CredentialStoreTests {
-    @Test("A stored password comes back")
+    @Test("A stored login comes back")
     func roundTrip() throws {
         let store = InMemoryCredentialStore()
-        #expect(try store.password() == nil)
+        #expect(try store.credential() == nil)
 
-        try store.setPassword("hunter2")
-        #expect(try store.password() == "hunter2")
-    }
-
-    @Test("Clearing removes it")
-    func clearing() throws {
-        let store = InMemoryCredentialStore(password: "hunter2")
-        try store.setPassword(nil)
-
-        #expect(try store.password() == nil)
+        try store.setCredential(username: "jarrett", password: "hunter2")
+        let stored = try #require(try store.credential())
+        #expect(stored == ("jarrett", "hunter2"))
     }
 
     @Test("An empty username means no header even with a password")
     func headerRequiresUsername() throws {
-        let config = try ServerConfig(urlString: "http://nas.local:9091/", username: "")
-        #expect(config.authorizationHeader(password: "hunter2") == nil)
+        let config = try ServerConfig(urlString: "http://nas.local:9091/")
+        #expect(config.authorizationHeader(username: "", password: "hunter2") == nil)
+        #expect(config.authorizationHeader(username: nil, password: "hunter2") == nil)
     }
 
-    @Test("A username with no password still authenticates")
+    @Test("A username with an empty password still authenticates")
     func passwordlessUser() throws {
-        let config = try ServerConfig(urlString: "http://nas.local:9091/", username: "jarrett")
-        #expect(config.authorizationHeader(password: nil) == "Basic \(Data("jarrett:".utf8).base64EncodedString())")
+        let config = try ServerConfig(urlString: "http://nas.local:9091/")
+        let expected = "Basic \(Data("jarrett:".utf8).base64EncodedString())"
+
+        #expect(config.authorizationHeader(username: "jarrett", password: "") == expected)
+        #expect(config.authorizationHeader(username: "jarrett", password: nil) == expected)
     }
 }
 

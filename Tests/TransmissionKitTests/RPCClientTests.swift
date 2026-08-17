@@ -7,10 +7,11 @@ private let magnet = URL(string: "magnet:?xt=urn:btih:c9e15763f722f23e98a29decdf
 private func makeClient(
     transport: ScriptedTransport,
     username: String? = nil,
-    password: String? = nil
+    password: String = ""
 ) throws -> RPCClient {
-    let config = try ServerConfig(urlString: "http://nas.local:9091/transmission/", username: username)
-    return RPCClient(config: config, credentials: InMemoryCredentialStore(password: password), transport: transport)
+    let config = try ServerConfig(urlString: "http://nas.local:9091/transmission/")
+    let credentials = InMemoryCredentialStore(username: username, password: password)
+    return RPCClient(config: config, credentials: credentials, transport: transport)
 }
 
 @Suite("Session handshake")

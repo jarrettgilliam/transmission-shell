@@ -6,29 +6,35 @@ import Testing
 /// Counts reads so tests can assert the keychain is touched once, since every real read is
 /// a chance for macOS to prompt for the user's password.
 private final class CountingCredentialStore: CredentialStore {
-    private let storage = Mutex<String?>(nil)
+    private let storage = Mutex<(username: String, password: String)?>(nil)
     private let readDuration: TimeInterval
     let reads = Mutex(0)
 
-    init(password: String?, readDuration: TimeInterval = 0) {
+    init(username: String?, password: String = "", readDuration: TimeInterval = 0) {
         self.readDuration = readDuration
-        storage.withLock { $0 = password }
+        if let username {
+            storage.withLock { $0 = (username: username, password: password) }
+        }
     }
 
-    func password() throws -> String? {
+    func credential() throws -> (username: String, password: String)? {
         reads.withLock { $0 += 1 }
         Thread.sleep(forTimeInterval: readDuration)
         return storage.withLock { $0 }
     }
 
-    func setPassword(_ password: String?) throws {
-        let value = normalized(password)
-        storage.withLock { $0 = value }
+    func setCredential(username: String, password: String) throws {
+        storage.withLock { $0 = (username: username, password: password) }
     }
 
-    func hasPassword() throws -> Bool {
+    func hasCredential() throws -> Bool {
         reads.withLock { $0 += 1 }
         return storage.withLock { $0 } != nil
+    }
+
+    func username() throws -> String? {
+        reads.withLock { $0 += 1 }
+        return storage.withLock { $0?.username }
     }
 }
 
@@ -36,12 +42,13 @@ private final class CountingCredentialStore: CredentialStore {
 struct CachingCredentialStoreTests {
     @Test("Repeated reads hit the wrapped store once")
     func readsThroughOnce() throws {
-        let counting = CountingCredentialStore(password: "hunter2")
+        let counting = CountingCredentialStore(username: "jarrett", password: "hunter2")
         let store = CachingCredentialStore(counting)
 
         for _ in 0..<5 {
-            #expect(try store.password() == "hunter2")
-            #expect(try store.hasPassword())
+            #expect(try store.credential()! == ("jarrett", "hunter2"))
+            #expect(try store.hasCredential())
+            #expect(try store.username() == "jarrett")
         }
 
         #expect(counting.reads.withLock { $0 } == 1)
@@ -52,13 +59,13 @@ struct CachingCredentialStoreTests {
     /// its own prompt.
     @Test("Concurrent reads hit the wrapped store once")
     func concurrentReadsCollapse() {
-        let counting = CountingCredentialStore(password: "hunter2", readDuration: 0.2)
+        let counting = CountingCredentialStore(username: "jarrett", password: "hunter2", readDuration: 0.2)
         let store = CachingCredentialStore(counting)
 
         let group = DispatchGroup()
         for _ in 0..<4 {
             DispatchQueue.global().async(group: group) {
-                #expect((try? store.password()) == "hunter2")
+                #expect((try? store.credential())??.password == "hunter2")
             }
         }
         group.wait()
@@ -66,65 +73,63 @@ struct CachingCredentialStoreTests {
         #expect(counting.reads.withLock { $0 } == 1)
     }
 
-    @Test("An absent password is cached too")
+    @Test("An absent login is cached too")
     func cachesAbsence() throws {
-        let counting = CountingCredentialStore(password: nil)
+        let counting = CountingCredentialStore(username: nil)
         let store = CachingCredentialStore(counting)
 
-        #expect(try store.password() == nil)
-        #expect(try store.hasPassword() == false)
-        #expect(try store.password() == nil)
+        #expect(try store.credential() == nil)
+        #expect(try store.hasCredential() == false)
+        #expect(try store.username() == nil)
 
         #expect(counting.reads.withLock { $0 } == 1)
     }
 
     @Test("Writing refreshes the cache rather than staling it")
     func writeRefreshes() throws {
-        let counting = CountingCredentialStore(password: "old")
+        let counting = CountingCredentialStore(username: "jarrett", password: "old")
         let store = CachingCredentialStore(counting)
-        #expect(try store.password() == "old")
+        #expect(try store.credential()! == ("jarrett", "old"))
 
-        try store.setPassword("new")
+        try store.setCredential(username: "alice", password: "new")
 
-        #expect(try store.password() == "new")
-        #expect(try store.hasPassword())
+        #expect(try store.credential()! == ("alice", "new"))
+        #expect(try store.username() == "alice")
         #expect(counting.reads.withLock { $0 } == 1)
     }
 
-    @Test("Removal is visible without a re-read", arguments: [nil, ""])
-    func removalRefreshes(erasure: String?) throws {
-        let counting = CountingCredentialStore(password: "old")
+    @Test("Invalidating picks up a password changed elsewhere")
+    func invalidationRereads() throws {
+        let counting = CountingCredentialStore(username: "jarrett", password: "old")
         let store = CachingCredentialStore(counting)
-        #expect(try store.password() == "old")
+        #expect(try store.credential()!.password == "old")
 
-        try store.setPassword(erasure)
+        try counting.setCredential(username: "jarrett", password: "changed in Safari")
+        #expect(try store.credential()!.password == "old")
 
-        #expect(try store.password() == nil)
-        #expect(try store.hasPassword() == false)
-        #expect(counting.reads.withLock { $0 } == 1)
+        store.invalidate()
+
+        #expect(try store.credential()!.password == "changed in Safari")
+        #expect(counting.reads.withLock { $0 } == 2)
     }
 }
 
 @Suite("InMemoryCredentialStore")
 struct InMemoryCredentialStoreTests {
-    @Test("hasPassword tracks the stored value")
+    @Test("hasCredential tracks the stored value")
     func reportsPresence() throws {
-        let store = InMemoryCredentialStore()
-        #expect(try store.hasPassword() == false)
+        #expect(try InMemoryCredentialStore().hasCredential() == false)
 
-        try store.setPassword("hunter2")
-        #expect(try store.hasPassword())
-
-        try store.setPassword(nil)
-        #expect(try store.hasPassword() == false)
+        let store = InMemoryCredentialStore(username: "jarrett")
+        #expect(try store.hasCredential())
+        #expect(try store.username() == "jarrett")
     }
 
-    @Test("An empty password is a removal")
-    func emptyIsRemoval() throws {
-        let store = InMemoryCredentialStore(password: "hunter2")
-        try store.setPassword("")
+    @Test("An empty password is a login, not an absence")
+    func emptyPasswordIsStored() throws {
+        let store = InMemoryCredentialStore(username: "jarrett", password: "")
 
-        #expect(try store.password() == nil)
-        #expect(try store.hasPassword() == false)
+        #expect(try store.credential()! == ("jarrett", ""))
+        #expect(try store.hasCredential())
     }
 }

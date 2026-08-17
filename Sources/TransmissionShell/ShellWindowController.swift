@@ -10,12 +10,22 @@ import os
 final class ShellWindowController: NSWindowController {
     var onOpenSettings: (() -> Void)?
 
+    /// Why the last auth challenge was cancelled. Both cases surface as the same
+    /// `NSURLErrorUserCancelledAuthentication`, and only this tells the failure page whether
+    /// to blame the server or say there is nothing saved.
+    private enum AuthCancellation {
+        case noCredential
+        case rejected
+    }
+
     private static let blankPage = URL(string: "about:blank")!
 
     private let model: AppModel
     private let webView: WKWebView
     private let container = NSView()
     private var placeholder: PlaceholderView?
+    private var authCancellation: AuthCancellation?
+    private var isShowingAuthFailure = false
     private let logger = Logger(subsystem: InstallationIdentity.current, category: "ShellWindow")
 
     init(model: AppModel) {
@@ -85,6 +95,9 @@ final class ShellWindowController: NSWindowController {
 
     func reload() {
         updateTitle()
+        model.invalidateCredentialCache()
+        authCancellation = nil
+        isShowingAuthFailure = false
 
         guard let config = model.config else {
             showUnconfigured()
@@ -128,9 +141,9 @@ final class ShellWindowController: NSWindowController {
         placeholder = nil
     }
 
-    private func showFailure(_ message: String) {
+    private func showFailure(_ message: String, title: String = "Can’t reach the server") {
         showPlaceholder(
-            title: "Can’t reach the server",
+            title: title,
             message: message,
             actions: [
                 PlaceholderView.Action(title: "Try Again") { [weak self] in self?.reload() },
@@ -169,7 +182,12 @@ extension ShellWindowController: WKNavigationDelegate {
             // A nonzero failure count means this credential was already rejected for this
             // protection space; offering it again just loops. Counting challenges instead
             // would starve the page, which authenticates each subresource and RPC poll.
-            guard challenge.previousFailureCount == 0, let credential = model.webCredential() else {
+            guard challenge.previousFailureCount == 0 else {
+                authCancellation = .rejected
+                return (.cancelAuthenticationChallenge, nil)
+            }
+            guard let credential = model.webCredential() else {
+                authCancellation = .noCredential
                 return (.cancelAuthenticationChallenge, nil)
             }
             return (.useCredential, credential)
@@ -186,6 +204,29 @@ extension ShellWindowController: WKNavigationDelegate {
         default:
             return (.performDefaultHandling, nil)
         }
+    }
+
+    /// Cancelling an auth challenge does not fail the navigation: WebKit commits the response
+    /// and paints the daemon's own 401 page. The placeholder has to displace it here, on the
+    /// response itself, which is true whatever the challenge did.
+    ///
+    /// Completion-handler form for the same reason as the challenge delegate above.
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationResponse: WKNavigationResponse,
+        decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void
+    ) {
+        guard navigationResponse.isForMainFrame,
+              let response = navigationResponse.response as? HTTPURLResponse,
+              response.statusCode == 401
+        else {
+            decisionHandler(.allow)
+            return
+        }
+
+        logger.error("Web UI refused: HTTP 401")
+        showAuthFailure()
+        decisionHandler(.cancel)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -209,14 +250,30 @@ extension ShellWindowController: WKNavigationDelegate {
 
     private func handle(_ error: any Error) {
         let nsError = error as NSError
-        guard nsError.code != NSURLErrorCancelled else { return }
+        // Cancelling the 401 response is itself reported as a failed load, and the placeholder
+        // it put up says more than the interruption would.
+        guard nsError.code != NSURLErrorCancelled, !isShowingAuthFailure else { return }
 
         logger.error("Web UI navigation failed: \(nsError.localizedDescription, privacy: .public)")
 
-        let message = nsError.code == NSURLErrorUserCancelledAuthentication
-            ? "The server rejected the username or password. Check them in Settings."
-            : nsError.localizedDescription
-        showFailure(message)
+        guard nsError.code == NSURLErrorUserCancelledAuthentication else {
+            showFailure(nsError.localizedDescription)
+            return
+        }
+        showAuthFailure()
+    }
+
+    private func showAuthFailure() {
+        isShowingAuthFailure = true
+
+        if authCancellation == .noCredential {
+            showFailure("No username or password saved for this server.", title: "Sign-in required")
+        } else {
+            showFailure(
+                "The server rejected the username or password. Check them in Settings.",
+                title: "Can’t sign in"
+            )
+        }
     }
 }
 
