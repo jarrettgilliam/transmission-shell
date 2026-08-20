@@ -77,11 +77,11 @@ final class AppModel {
         urlString: String,
         username: String,
         password: PasswordChange,
-        allowsInvalidCertificates: Bool
+        bypassCertificateValidation: Bool
     ) throws {
         let newConfig = try ServerConfig(
             urlString: urlString,
-            allowsInvalidCertificates: allowsInvalidCertificates
+            bypassCertificateValidation: bypassCertificateValidation
         )
 
         let store = credentialStore(for: newConfig)
@@ -101,11 +101,11 @@ final class AppModel {
         urlString: String,
         username: String,
         password: PasswordChange,
-        allowsInvalidCertificates: Bool
+        bypassCertificateValidation: Bool
     ) throws -> RPCClient {
         let probeConfig = try ServerConfig(
             urlString: urlString,
-            allowsInvalidCertificates: allowsInvalidCertificates
+            bypassCertificateValidation: bypassCertificateValidation
         )
 
         let resolved = try resolveCredential(
@@ -120,7 +120,7 @@ final class AppModel {
                 username: resolved?.username,
                 password: resolved?.password ?? ""
             ),
-            transport: URLSessionTransport(allowsInvalidCertificates: probeConfig.allowsInvalidCertificates)
+            transport: URLSessionTransport(bypassCertificateValidation: probeConfig.bypassCertificateValidation)
         )
     }
 
@@ -159,7 +159,7 @@ final class AppModel {
         client = RPCClient(
             config: config,
             credentials: store,
-            transport: URLSessionTransport(allowsInvalidCertificates: config.allowsInvalidCertificates)
+            transport: URLSessionTransport(bypassCertificateValidation: config.bypassCertificateValidation)
         )
     }
 }

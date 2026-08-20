@@ -85,7 +85,7 @@ struct ConfigPersistenceTests {
     func roundTrip() throws {
         let config = try ServerConfig(
             urlString: "https://example.com/tr/",
-            allowsInvalidCertificates: true
+            bypassCertificateValidation: true
         )
         let store = InMemoryServerConfigStore()
         try store.save(config)
@@ -100,7 +100,7 @@ struct ConfigPersistenceTests {
 
     @Test("Decoding renormalizes, so stored junk can't bypass the rules")
     func decodingNormalizes() throws {
-        let stored = #"{"baseURL":"http://nas.local:9091/transmission/web/","allowsInvalidCertificates":false}"#
+        let stored = #"{"baseURL":"http://nas.local:9091/transmission/web/","bypassCertificateValidation":false}"#
         let config = try JSONDecoder().decode(ServerConfig.self, from: Data(stored.utf8))
 
         #expect(config.baseURL.absoluteString == "http://nas.local:9091/transmission/")

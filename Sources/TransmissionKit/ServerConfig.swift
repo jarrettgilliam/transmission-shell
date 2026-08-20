@@ -3,14 +3,14 @@ import Foundation
 /// Connection settings for a single Transmission daemon.
 ///
 /// `baseURL` mirrors the daemon's own `rpc-url` setting: the directory beneath which
-/// `rpc` and `web/` are served. It is always normalized (see ``init(urlString:allowsInvalidCertificates:)``),
+/// `rpc` and `web/` are served. It is always normalized (see ``init(urlString:bypassCertificateValidation:)``),
 /// including when decoded, so a value of this type is always usable as-is.
 ///
 /// The login is never held here; see ``CredentialStore``.
 public struct ServerConfig: Codable, Sendable, Equatable {
     public let baseURL: URL
 
-    public var allowsInvalidCertificates: Bool
+    public var bypassCertificateValidation: Bool
 
     public static let defaultURLString = "http://localhost:9091/transmission/"
 
@@ -23,23 +23,23 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     /// userinfo are discarded.
     ///
     /// Throws ``ConfigError``.
-    public init(urlString: String, allowsInvalidCertificates: Bool = false) throws {
+    public init(urlString: String, bypassCertificateValidation: Bool = false) throws {
         self.baseURL = try Self.normalize(urlString)
-        self.allowsInvalidCertificates = allowsInvalidCertificates
+        self.bypassCertificateValidation = bypassCertificateValidation
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
             urlString: container.decode(String.self, forKey: .baseURL),
-            allowsInvalidCertificates: container.decodeIfPresent(Bool.self, forKey: .allowsInvalidCertificates) ?? false
+            bypassCertificateValidation: container.decodeIfPresent(Bool.self, forKey: .bypassCertificateValidation) ?? false
         )
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(baseURL.absoluteString, forKey: .baseURL)
-        try container.encode(allowsInvalidCertificates, forKey: .allowsInvalidCertificates)
+        try container.encode(bypassCertificateValidation, forKey: .bypassCertificateValidation)
     }
 
     public var rpcURL: URL {
@@ -86,7 +86,7 @@ public struct ServerConfig: Codable, Sendable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case baseURL, allowsInvalidCertificates
+        case baseURL, bypassCertificateValidation
     }
 }
 

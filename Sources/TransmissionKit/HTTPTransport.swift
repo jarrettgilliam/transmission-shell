@@ -10,14 +10,12 @@ public protocol HTTPTransport: Sendable {
 public final class URLSessionTransport: HTTPTransport {
     private let session: URLSession
 
-    /// Setting `allowsInvalidCertificates` accepts any server certificate, for daemons
-    /// behind a proxy using an internal CA.
-    public init(timeout: TimeInterval = 15, allowsInvalidCertificates: Bool = false) {
+    public init(timeout: TimeInterval = 15, bypassCertificateValidation: Bool = false) {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = timeout
         self.session = URLSession(
             configuration: configuration,
-            delegate: allowsInvalidCertificates ? PermissiveTrustDelegate() : nil,
+            delegate: bypassCertificateValidation ? PermissiveTrustDelegate() : nil,
             delegateQueue: nil
         )
     }

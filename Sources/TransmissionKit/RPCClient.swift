@@ -30,7 +30,7 @@ public actor RPCClient {
         self.config = config
         self.credentials = credentials
         self.transport = transport
-            ?? URLSessionTransport(allowsInvalidCertificates: config.allowsInvalidCertificates)
+            ?? URLSessionTransport(bypassCertificateValidation: config.bypassCertificateValidation)
     }
 
     /// Round-trips `session-get`. Throws ``RPCError`` describing why the server is

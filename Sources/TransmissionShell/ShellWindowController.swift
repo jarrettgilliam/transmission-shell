@@ -194,7 +194,7 @@ extension ShellWindowController: WKNavigationDelegate {
 
         case NSURLAuthenticationMethodServerTrust:
             // ATS is off for this app, but that doesn't bypass TLS trust evaluation.
-            guard model.config?.allowsInvalidCertificates == true,
+            guard model.config?.bypassCertificateValidation == true,
                   let trust = challenge.protectionSpace.serverTrust
             else {
                 return (.performDefaultHandling, nil)

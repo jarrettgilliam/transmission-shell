@@ -14,7 +14,7 @@ final class SettingsFormState {
     var urlString: String
     var username = ""
     var password = ""
-    var allowsInvalidCertificates: Bool
+    var bypassCertificateValidation: Bool
     var testStatus: TestStatus = .idle
     var saveError: String?
 
@@ -24,7 +24,7 @@ final class SettingsFormState {
 
     init(config: ServerConfig?) {
         urlString = config?.baseURL.absoluteString ?? ServerConfig.defaultURLString
-        allowsInvalidCertificates = config?.allowsInvalidCertificates ?? false
+        bypassCertificateValidation = config?.bypassCertificateValidation ?? false
     }
 
     /// The field is write-only: empty means "leave whatever is in the keychain alone".
@@ -47,7 +47,7 @@ struct SettingsView: View {
                 Section {
                     TextField("Server URL", text: $form.urlString, prompt: Text(ServerConfig.defaultURLString))
                         .textContentType(.URL)
-                    Text("The address of the Transmission web interface. Pasting it from your browser works.")
+                    Text("The address of the Transmission web interface.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -58,10 +58,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Allow invalid certificates", isOn: $form.allowsInvalidCertificates)
-                    Text("Only for a daemon behind a proxy using an internal certificate authority.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Toggle("Bypass certificate validation", isOn: $form.bypassCertificateValidation)
                 }
             }
             .formStyle(.grouped)
@@ -137,7 +134,7 @@ struct SettingsView: View {
                     urlString: form.urlString,
                     username: form.username,
                     password: form.passwordChange,
-                    allowsInvalidCertificates: form.allowsInvalidCertificates
+                    bypassCertificateValidation: form.bypassCertificateValidation
                 )
                 try await client.testConnection()
                 form.testStatus = .succeeded
@@ -155,7 +152,7 @@ struct SettingsView: View {
                 urlString: form.urlString,
                 username: form.username,
                 password: form.passwordChange,
-                allowsInvalidCertificates: form.allowsInvalidCertificates
+                bypassCertificateValidation: form.bypassCertificateValidation
             )
             form.saveError = nil
             onSave()
