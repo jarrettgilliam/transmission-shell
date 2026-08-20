@@ -31,7 +31,7 @@ The daemon's web UI in a native window:
 Settings (⌘,) — one address field, plus optional credentials. See
 [Server address](#server-address):
 
-<img src="https://github.com/user-attachments/assets/86fa5c96-3ef7-426f-a9fc-429371f3ede9"
+<img src="https://github.com/user-attachments/assets/e7283da2-d948-4603-9dca-c4f427c97833"
      alt="The Server Connection settings sheet, with fields for server URL, username, and password"
      width="592" height="558">
 
